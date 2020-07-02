@@ -97,11 +97,7 @@ function PDFEditor() {
 	function submitFile(files) {
 		handleDropzone();
 
-		for (let file of files) {
-			allFiles.push(file);
-		}
-
-		setFiles(allFiles);
+		setFiles(allFiles.concat(files));
 		selectItem(selected);
 	}
 
