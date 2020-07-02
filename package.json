@@ -3,11 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^4.10.2",
+    "@material-ui/icons": "^4.9.1",
+    "@material-ui/styles": "^4.10.0",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
+    "bootstrap": "^4.5.0",
+    "downloadjs": "^1.4.7",
+    "konva": "^7.0.0",
+    "material-ui-dropzone": "^3.3.0",
+    "pdf-lib": "^1.9.0",
     "react": "^16.13.1",
+    "react-bootstrap": "^1.0.1",
+    "react-color": "^2.18.1",
     "react-dom": "^16.13.1",
+    "react-konva": "^16.13.0-3",
+    "react-pdf": "^4.1.0",
     "react-scripts": "3.4.1"
   },
   "scripts": {
@@ -30,5 +42,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "eslint-plugin-react-hooks": "^4.0.5"
   }
 }
