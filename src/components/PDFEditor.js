@@ -19,7 +19,8 @@ import {
 	FormControl,
 	RadioGroup,
 	FormControlLabel,
-	Slider
+	Slider,
+	Checkbox
 } from '@material-ui/core';
 import { Stage, Layer, Text } from 'react-konva';
 import { makeStyles } from '@material-ui/styles';
@@ -31,22 +32,29 @@ import { SketchPicker } from 'react-color';
 
 function PDFEditor() {
 	const [ allFiles, setFiles ] = useState([]);
-	const [ text, setText ] = useState('Type Something');
+	const [ text, setText ] = useState('Watermark');
 	const [ selected, setSelected ] = useState();
-	const [ watermarkColor, setWatermarkColor ] = useState('#000000');
-	const [ watermarkPosition, setWatermarkPosition ] = useState({ x: 0, y: 50 });
+	const [ watermarkColor, setWatermarkColor ] = useState('#FF0000');
 	const [ pageSize, setPageSize ] = useState({ width: 600, height: 600 });
 	const [ ratio, setRation ] = useState(1);
 	const [ showColorPicker, setShowColorPicker ] = useState(false);
-	const [ fontSize, setFontSize ] = useState(20);
-	const [ opacity, setOpacity ] = useState(1);
-	const [ angle, setAngle ] = useState(0);
+	const [ fontSize, setFontSize ] = useState(40);
+	const [ opacity, setOpacity ] = useState(0.3);
+	const [ angle, setAngle ] = useState(45);
+	const [ watermarkPosition, setWatermarkPosition ] = useState({
+		x: pageSize.height / 2 - fontSize,
+		y: pageSize.width / 2 - getTextWidth(text, fontSize) / 2 - fontSize * Math.sin(angle * (Math.PI / 180))
+	});
+	const [ activeWatermark, setActiveWatermark ] = useState(true);
 
-	const [ defaultText, setDefaultText ] = useState('Default text');
-	const [ defaultTextPosition, setDefaultTextPosition ] = useState({ x: 0, y: 0 });
+	const [ defaultText, setDefaultText ] = useState('Geleverd aan');
 	const [ defaultTextColor, setDefaultTextColor ] = useState('#000000');
 	const [ defaultTextSize, setDefaultTextSize ] = useState(11);
 	const [ showDefaultTextColorPicker, setShowDefaultTextColorPicker ] = useState(false);
+	const [ defaultTextPosition, setDefaultTextPosition ] = useState({
+		x: pageSize.width / 2 - getTextWidth(defaultText, defaultTextSize) / 2,
+		y: 0
+	});
 
 	useEffect(
 		() => {
@@ -77,19 +85,19 @@ function PDFEditor() {
 
 	const colorPickerCssMaker = makeStyles({
 		color: {
-			width: '64px',
-			height: '32px',
+			width: '32px',
+			height: '18px',
 			borderRadius: '2px',
 			background: `${watermarkColor}`
 		},
 		defaultTextColor: {
-			width: '64px',
-			height: '32px',
+			width: '32px',
+			height: '18px',
 			borderRadius: '2px',
 			background: `${defaultTextColor}`
 		},
 		swatch: {
-			padding: '5px',
+			padding: '2px',
 			background: '#fff',
 			borderRadius: '1px',
 			boxShadow: '0 0 0 1px rgba(0,0,0,.1)',
@@ -155,7 +163,7 @@ function PDFEditor() {
 
 			const rotation = {
 				type: RotationTypes.Degrees,
-				angle: -angle
+				angle: angle
 			};
 
 			console.log(rotation);
@@ -165,27 +173,38 @@ function PDFEditor() {
 
 				const { defaultTextX, defaultTextY } = generateDefaultTextPosition();
 
-				page.drawText(text, {
-					x: x / ratio,
-					y: y / ratio,
-					opacity: opacity,
-					color: generateColorForPdf(watermarkColor),
-					rotate: rotation,
-					size: fontSize / ratio
-				});
-
 				page.drawText(defaultText, {
 					x: defaultTextX / ratio,
 					y: defaultTextY / ratio,
 					color: generateColorForPdf(defaultTextColor),
 					size: defaultTextSize / ratio
 				});
+
+				if (activeWatermark) {
+					page.drawText(text, {
+						x: x / ratio,
+						y: y / ratio,
+						opacity: opacity,
+						color: generateColorForPdf(watermarkColor),
+						rotate: rotation,
+						size: fontSize / ratio
+					});
+				}
 			}
 
 			const dl = await doc.save();
 
 			require('downloadjs')(dl, allFiles[selected].name, 'application/pdf');
 		}
+	}
+
+	function getTextWidth(text, font) {
+		const canvas = document.createElement('canvas');
+		const context = canvas.getContext('2d');
+
+		context.font = font || getComputedStyle(document.body).font;
+
+		return context.measureText(text).width;
 	}
 
 	function generatePosition() {
@@ -234,45 +253,46 @@ function PDFEditor() {
 	}
 
 	return (
-		<Container fixed maxWidth="lg" className={classes.height}>
-			<Grid container spacing={2}>
-				<Grid item xs={12}>
-					<AppBar position="static">
-						<Toolbar>
-							<Typography variant="h6" color="inherit">
-								PDF Editor
-							</Typography>
-						</Toolbar>
-					</AppBar>
-				</Grid>
+		<Box component="div" style={{ width: '100%' }}>
+			<Box width={1280} style={{ margin: '0 auto' }}>
+				<AppBar position="static">
+					<Toolbar>
+						<Typography variant="h6" color="inherit">
+							AlbersenIC
+						</Typography>
+					</Toolbar>
+				</AppBar>
 
-				<Grid container spacing={2} style={{ width: '2000px !important' }}>
-					<Grid container item xs={3} spacing={1} direction="column" alignItems="center">
-						<Grid container item>
-							<Button
-								startIcon={<AttachFile />}
-								fullWidth
-								variant="contained"
-								color="secondary"
-								onClick={handleDropzone}
-							>
-								Add PDF
-							</Button>
-							<DropzoneDialog
-								open={dropzone.open}
-								onSave={submitFile}
-								acceptedFiles={[ 'application/pdf' ]}
-								filesLimit={500}
-								showPreviews={true}
-								maxFileSize={5000000000}
-								onClose={handleDropzone}
-							/>
-						</Grid>
+				<Box component="div" display="inline-block">
+					<Box
+						component="div"
+						display="inline-block"
+						style={{ verticalAlign: 'top', backgroundColor: '#898989', minHeight: '600px' }}
+						width={300}
+						marginRight={2}
+					>
+						<Button
+							startIcon={<AttachFile />}
+							fullWidth
+							variant="contained"
+							color="secondary"
+							onClick={handleDropzone}
+						>
+							Add PDF
+						</Button>
+						<DropzoneDialog
+							open={dropzone.open}
+							onSave={submitFile}
+							acceptedFiles={[ 'application/pdf' ]}
+							filesLimit={500}
+							showPreviews={true}
+							maxFileSize={5000000000}
+							onClose={handleDropzone}
+						/>
+						<List style={{ maxHeight: '600px', overflow: 'auto' }}>{getFiles()}</List>
+					</Box>
 
-						<List style={{ maxHeight: '90vh', overflow: 'auto' }}>{getFiles()}</List>
-					</Grid>
-
-					<Grid item container xs={7} direction="column">
+					<Box component="div" display="inline-block" style={{ verticalAlign: 'top' }} width={648}>
 						<Box>
 							<Box position="absolute" zIndex={-1} className={classes.pdfPage}>
 								<Document file={allFiles[selected]}>
@@ -297,187 +317,184 @@ function PDFEditor() {
 											}}
 										/>
 									</Layer>
-									<Layer>
-										<Text
-											text={text}
-											draggable
-											fontSize={fontSize}
-											opacity={opacity}
-											fill={watermarkColor}
-											x={watermarkPosition.x}
-											y={watermarkPosition.y}
-											rotation={angle}
-											onDragEnd={(e) => {
-												setWatermarkPosition({
-													x: e.target.x(),
-													y: e.target.y()
-												});
-											}}
-										/>
-									</Layer>
+									{activeWatermark ? (
+										<Layer>
+											<Text
+												text={text}
+												draggable
+												fontSize={fontSize}
+												opacity={opacity}
+												fill={watermarkColor}
+												x={watermarkPosition.x}
+												y={watermarkPosition.y}
+												rotation={-angle}
+												onDragEnd={(e) => {
+													setWatermarkPosition({
+														x: e.target.x(),
+														y: e.target.y()
+													});
+												}}
+											/>
+										</Layer>
+									) : null}
 								</Stage>
 							</Box>
 						</Box>
-					</Grid>
+					</Box>
 
-					<Grid item xs={2} container alignItems="center">
-						<Grid container item>
-							{/* <Grid item>
-								<FormControl component="fieldset">
-									<FormLabel component="legend">Watermark Position</FormLabel>
-									<RadioGroup aria-label="position" name="position">
-										<FormControlLabel value="top-left" control={<Radio />} label="Top Left" />
-										<FormControlLabel value="top-right" control={<Radio />} label="Top Right" />
-										<FormControlLabel value="bottom-left" control={<Radio />} label="Bottom Left" />
-										<FormControlLabel
-											value="bottom-right"
-											control={<Radio />}
-											label="Bottom Right"
+					<Box
+						component="div"
+						display="inline-block"
+						style={{ verticalAlign: 'top' }}
+						width={300}
+						marginLeft={2}
+					>
+						<Box paddingX={2} style={{ backgroundColor: '#AAAAAA' }}>
+							<Typography variant="h6">Geleverd aan</Typography>
+							<TextField
+								label="Text Size"
+								size="small"
+								variant="outlined"
+								value={defaultTextSize}
+								onChange={(event) => {
+									let number = Number(event.target.value);
+
+									if (!isNaN(number) && number < 101) {
+										setDefaultTextSize(number);
+									}
+								}}
+							/>
+
+							<Typography variant="caption">Text color </Typography>
+							<div>
+								<div
+									className={colorPickerCss.swatch}
+									onClick={() => {
+										setShowDefaultTextColorPicker(!showDefaultTextColorPicker);
+									}}
+								>
+									<div className={colorPickerCss.defaultTextColor} />
+								</div>
+								{showDefaultTextColorPicker ? (
+									<div className={colorPickerCss.popover}>
+										<div
+											className={colorPickerCss.cover}
+											onClick={() => {
+												setShowDefaultTextColorPicker(!showDefaultTextColorPicker);
+											}}
 										/>
-									</RadioGroup>
-								</FormControl>
-							</Grid> */}
-
-							<Grid item style={{ backgroundColor: '#AAAAAA' }}>
-								<Typography variant="h6">Default Text Size</Typography>
-								<TextField
-									size="small"
-									variant="outlined"
-									value={defaultTextSize}
-									onChange={(event) => {
-										let number = Number(event.target.value);
-
-										if (!isNaN(number) && number < 101) {
-											setDefaultTextSize(number);
-										}
-									}}
-								/>
-
-								<Typography variant="h6">Default text color </Typography>
-								<div>
-									<div
-										className={colorPickerCss.swatch}
-										onClick={() => {
-											setShowDefaultTextColorPicker(!showDefaultTextColorPicker);
-										}}
-									>
-										<div className={colorPickerCss.defaultTextColor} />
+										<SketchPicker
+											color={defaultTextColor}
+											onChange={(color) => setDefaultTextColor(color.hex)}
+										/>
 									</div>
-									{showDefaultTextColorPicker ? (
-										<div className={colorPickerCss.popover}>
-											<div
-												className={colorPickerCss.cover}
-												onClick={() => {
-													setShowDefaultTextColorPicker(!showDefaultTextColorPicker);
-												}}
-											/>
-											<SketchPicker
-												color={defaultTextColor}
-												onChange={(color) => setDefaultTextColor(color.hex)}
-											/>
-										</div>
-									) : null}
-								</div>
+								) : null}
+							</div>
 
-								<TextField
-									size="small"
-									variant="outlined"
-									value={defaultText}
-									placeholder="Text to show"
-									multiline
-									onChange={(event) => setDefaultText(event.target.value)}
-								/>
-							</Grid>
+							<TextField
+								size="small"
+								label="Text"
+								variant="outlined"
+								value={defaultText}
+								placeholder="Text to show"
+								multiline
+								onChange={(event) => setDefaultText(event.target.value)}
+							/>
+						</Box>
 
-							<Grid item style={{ backgroundColor: '#898989' }}>
-								<Typography variant="h6">Watermark SIze</Typography>
-								<TextField
-									size="small"
-									variant="outlined"
-									value={fontSize}
-									onChange={(event) => {
-										let number = Number(event.target.value);
+						<Box padding={2} style={{ backgroundColor: '#898989' }}>
+							<Typography variant="h6">Watermark</Typography>
+							<Checkbox
+								checked={activeWatermark}
+								onChange={(event) => setActiveWatermark(event.target.checked)}
+							/>
+							<TextField
+								size="small"
+								label="Watermark Size"
+								variant="outlined"
+								value={fontSize}
+								onChange={(event) => {
+									let number = Number(event.target.value);
 
-										if (!isNaN(number) && number < 101) {
-											setFontSize(number);
-										}
+									if (!isNaN(number) && number < 101) {
+										setFontSize(number);
+									}
+								}}
+							/>
+							<div>
+								<Typography variant="caption">Watermark Color</Typography>
+								<div
+									className={colorPickerCss.swatch}
+									onClick={() => {
+										setShowColorPicker(!showColorPicker);
 									}}
-								/>
-
-								<Typography variant="h6">Choose Color</Typography>
-								<div>
-									<div
-										className={colorPickerCss.swatch}
-										onClick={() => {
-											setShowColorPicker(!showColorPicker);
-										}}
-									>
-										<div className={colorPickerCss.color} />
+								>
+									<div className={colorPickerCss.color} />
+								</div>
+								{showColorPicker ? (
+									<div className={colorPickerCss.popover}>
+										<div
+											className={colorPickerCss.cover}
+											onClick={() => {
+												setShowColorPicker(!showColorPicker);
+											}}
+										/>
+										<SketchPicker
+											color={watermarkColor}
+											onChange={(color) => setWatermarkColor(color.hex)}
+										/>
 									</div>
-									{showColorPicker ? (
-										<div className={colorPickerCss.popover}>
-											<div
-												className={colorPickerCss.cover}
-												onClick={() => {
-													setShowColorPicker(!showColorPicker);
-												}}
-											/>
-											<SketchPicker
-												color={watermarkColor}
-												onChange={(color) => setWatermarkColor(color.hex)}
-											/>
-										</div>
-									) : null}
-								</div>
+								) : null}
+							</div>
+							<TextField
+								label="watermark"
+								size="small"
+								variant="outlined"
+								value={text}
+								placeholder="Text to show"
+								multiline
+								onChange={(event) => setText(event.target.value)}
+							/>
 
-								<TextField
-									size="small"
-									variant="outlined"
-									value={text}
-									placeholder="Text to show"
-									multiline
-									onChange={(event) => setText(event.target.value)}
-								/>
+							<Typography variant="caption">Opacity</Typography>
+							<Slider
+								value={opacity}
+								min={0.05}
+								step={0.001}
+								max={1}
+								onChange={(event, value) => {
+									setOpacity(value);
+								}}
+							/>
 
-								<Typography variant="h6">Opacity</Typography>
-								<Slider
-									value={opacity}
-									min={0.05}
-									step={0.001}
-									max={1}
-									onChange={(event, value) => {
-										setOpacity(value);
-									}}
-								/>
+							<Typography variant="caption">Rotation</Typography>
+							<Slider
+								value={angle}
+								min={0}
+								step={45}
+								marks
+								max={360}
+								onChange={(event, value) => {
+									setAngle(value);
+								}}
+							/>
 
-								<Typography variant="h6">Rotation</Typography>
-								<Slider
-									value={angle}
-									min={0}
-									step={0.001}
-									max={360}
-									onChange={(event, value) => {
-										setAngle(value);
-									}}
-								/>
-
-								<Box marginTop={3}>
-									<Button
-										startIcon={<CloudDownload />}
-										fullWidth
-										variant="contained"
-										color="primary"
-										onClick={process}
-									>
-										Save PDF
-									</Button>
-								</Box>
-							</Grid>
-						</Grid>
-					</Grid>
-				</Grid>
-			</Grid>
-		</Container>
+							<Box marginTop={3}>
+								<Button
+									startIcon={<CloudDownload />}
+									fullWidth
+									variant="contained"
+									color="primary"
+									onClick={process}
+								>
+									Save PDF
+								</Button>
+							</Box>
+						</Box>
+					</Box>
+				</Box>
+			</Box>
+		</Box>
 	);
 }
 
