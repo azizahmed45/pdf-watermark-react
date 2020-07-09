@@ -176,6 +176,7 @@ function PDFEditor() {
 				page.drawText(defaultText, {
 					x: defaultTextX / ratio,
 					y: defaultTextY / ratio,
+					lineHeight: fontSize / ratio,
 					color: generateColorForPdf(defaultTextColor),
 					size: defaultTextSize / ratio
 				});
@@ -186,6 +187,7 @@ function PDFEditor() {
 						y: y / ratio,
 						opacity: opacity,
 						color: generateColorForPdf(watermarkColor),
+						lineHeight: fontSize / ratio,
 						rotate: rotation,
 						size: fontSize / ratio
 					});
@@ -349,21 +351,9 @@ function PDFEditor() {
 						width={300}
 						marginLeft={2}
 					>
-						<Box paddingX={2} style={{ backgroundColor: '#AAAAAA' }}>
+						<Box padding={2} style={{ backgroundColor: '#AAAAAA' }}>
 							<Typography variant="h6">Geleverd aan</Typography>
-							<TextField
-								label="Text Size"
-								size="small"
-								variant="outlined"
-								value={defaultTextSize}
-								onChange={(event) => {
-									let number = Number(event.target.value);
-
-									if (!isNaN(number) && number < 101) {
-										setDefaultTextSize(number);
-									}
-								}}
-							/>
+							<hr />
 
 							<Typography variant="caption">Text color </Typography>
 							<div>
@@ -390,6 +380,19 @@ function PDFEditor() {
 									</div>
 								) : null}
 							</div>
+							<TextField
+								label="Text Size"
+								size="small"
+								variant="outlined"
+								value={defaultTextSize}
+								onChange={(event) => {
+									let number = Number(event.target.value);
+
+									if (!isNaN(number) && number < 101) {
+										setDefaultTextSize(number);
+									}
+								}}
+							/>
 
 							<TextField
 								size="small"
@@ -404,23 +407,12 @@ function PDFEditor() {
 
 						<Box padding={2} style={{ backgroundColor: '#898989' }}>
 							<Typography variant="h6">Watermark</Typography>
+							<hr />
 							<Checkbox
 								checked={activeWatermark}
 								onChange={(event) => setActiveWatermark(event.target.checked)}
 							/>
-							<TextField
-								size="small"
-								label="Watermark Size"
-								variant="outlined"
-								value={fontSize}
-								onChange={(event) => {
-									let number = Number(event.target.value);
 
-									if (!isNaN(number) && number < 101) {
-										setFontSize(number);
-									}
-								}}
-							/>
 							<div>
 								<Typography variant="caption">Watermark Color</Typography>
 								<div
@@ -446,6 +438,20 @@ function PDFEditor() {
 									</div>
 								) : null}
 							</div>
+							<TextField
+								size="small"
+								label="Watermark Size"
+								variant="outlined"
+								value={fontSize}
+								onChange={(event) => {
+									let number = Number(event.target.value);
+
+									if (!isNaN(number) && number < 101) {
+										setFontSize(number);
+									}
+								}}
+							/>
+
 							<TextField
 								label="watermark"
 								size="small"
