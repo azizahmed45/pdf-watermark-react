@@ -176,7 +176,7 @@ function PDFEditor() {
 				page.drawText(defaultText, {
 					x: defaultTextX / ratio,
 					y: defaultTextY / ratio,
-					lineHeight: fontSize / ratio,
+					lineHeight: defaultTextSize / ratio,
 					color: generateColorForPdf(defaultTextColor),
 					size: defaultTextSize / ratio
 				});
