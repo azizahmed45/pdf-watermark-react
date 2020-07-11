@@ -20,7 +20,9 @@ import {
 	RadioGroup,
 	FormControlLabel,
 	Slider,
-	Checkbox
+	Checkbox,
+	InputLabel,
+	Select
 } from '@material-ui/core';
 import { Stage, Layer, Text } from 'react-konva';
 import { makeStyles } from '@material-ui/styles';
@@ -55,6 +57,11 @@ function PDFEditor() {
 		x: pageSize.width / 2 - getTextWidth(defaultText, defaultTextSize) / 2,
 		y: 0
 	});
+
+	const [ option, setOption ] = useState('watermark');
+
+	const [ importantPages, setImportantPages ] = useState('');
+	const [ numberOfRemovePage, setNumberOfRemovePage ] = useState(0);
 
 	useEffect(
 		() => {
@@ -239,6 +246,48 @@ function PDFEditor() {
 		return rgb(r, g, b);
 	}
 
+	async function removePages() {
+		let important = importantPages.split(' ').join('');
+
+		important = importantPages.split(',');
+
+		for (let n in important) {
+			if (isNaN(important[n]) || important[n] === '') {
+				important.splice(n, 1);
+			} else {
+				important[n] = Number(important[n]);
+			}
+		}
+
+		if (allFiles.length > 0) {
+			const buffer = await allFiles[selected].arrayBuffer();
+
+			const doc = await PDFDocument.load(buffer);
+
+			//generate random numbers
+			var randomRemoveList = [];
+			while (randomRemoveList.length < numberOfRemovePage) {
+				var r = Math.floor(Math.random() * doc.getPageCount()) + 1;
+				if (randomRemoveList.indexOf(r) === -1 && important.indexOf(r) === -1) randomRemoveList.push(r);
+			}
+
+			//sort
+			randomRemoveList.sort(function(a, b) {
+				return b - a;
+			});
+
+			for (let n of randomRemoveList) {
+				doc.removePage(n - 1);
+			}
+
+			console.log(randomRemoveList);
+
+			const dl = await doc.save();
+
+			require('downloadjs')(dl, allFiles[selected].name, 'application/pdf');
+		}
+	}
+
 	function getFiles() {
 		return allFiles.map((file, index) => {
 			return (
@@ -262,6 +311,19 @@ function PDFEditor() {
 						<Typography variant="h6" color="inherit">
 							AlbersenIC
 						</Typography>
+						<Select
+							native
+							value={option}
+							onChange={(event) => {
+								setOption(event.target.value);
+							}}
+							inputProps={{
+								name: 'option'
+							}}
+						>
+							<option value="watermark">Watermark</option>
+							<option value="page-remover">Page Remover</option>
+						</Select>
 					</Toolbar>
 				</AppBar>
 
@@ -344,160 +406,213 @@ function PDFEditor() {
 						</Box>
 					</Box>
 
-					<Box
-						component="div"
-						display="inline-block"
-						style={{ verticalAlign: 'top' }}
-						width={300}
-						marginLeft={2}
-					>
-						<Box padding={2} style={{ backgroundColor: '#AAAAAA' }}>
-							<Typography variant="h6">Geleverd aan</Typography>
-							<hr />
+					{option === 'watermark' ? (
+						<Box
+							component="div"
+							display="inline-block"
+							style={{ verticalAlign: 'top' }}
+							width={300}
+							marginLeft={2}
+						>
+							<Box padding={2} style={{ backgroundColor: '#AAAAAA' }}>
+								<Typography variant="h6">Geleverd aan</Typography>
+								<hr />
 
-							<Typography variant="caption">Text color </Typography>
-							<div>
-								<div
-									className={colorPickerCss.swatch}
-									onClick={() => {
-										setShowDefaultTextColorPicker(!showDefaultTextColorPicker);
-									}}
-								>
-									<div className={colorPickerCss.defaultTextColor} />
-								</div>
-								{showDefaultTextColorPicker ? (
-									<div className={colorPickerCss.popover}>
-										<div
-											className={colorPickerCss.cover}
-											onClick={() => {
-												setShowDefaultTextColorPicker(!showDefaultTextColorPicker);
-											}}
-										/>
-										<SketchPicker
-											color={defaultTextColor}
-											onChange={(color) => setDefaultTextColor(color.hex)}
-										/>
+								<div>
+									<Typography variant="subtitle2">Text color </Typography>
+									<div
+										className={colorPickerCss.swatch}
+										onClick={() => {
+											setShowDefaultTextColorPicker(!showDefaultTextColorPicker);
+										}}
+									>
+										<div className={colorPickerCss.defaultTextColor} />
 									</div>
-								) : null}
-							</div>
-							<TextField
-								label="Text Size"
-								size="small"
-								variant="outlined"
-								value={defaultTextSize}
-								onChange={(event) => {
-									let number = Number(event.target.value);
+									{showDefaultTextColorPicker ? (
+										<div className={colorPickerCss.popover}>
+											<div
+												className={colorPickerCss.cover}
+												onClick={() => {
+													setShowDefaultTextColorPicker(!showDefaultTextColorPicker);
+												}}
+											/>
+											<SketchPicker
+												color={defaultTextColor}
+												onChange={(color) => setDefaultTextColor(color.hex)}
+											/>
+										</div>
+									) : null}
+								</div>
+								<TextField
+									label="Text Size"
+									size="small"
+									variant="outlined"
+									value={defaultTextSize}
+									onChange={(event) => {
+										let number = Number(event.target.value);
 
-									if (!isNaN(number) && number < 101) {
-										setDefaultTextSize(number);
-									}
-								}}
-							/>
+										if (!isNaN(number) && number < 101) {
+											setDefaultTextSize(number);
+										}
+									}}
+								/>
 
-							<TextField
-								size="small"
-								label="Text"
-								variant="outlined"
-								value={defaultText}
-								placeholder="Text to show"
-								multiline
-								onChange={(event) => setDefaultText(event.target.value)}
-							/>
+								<TextField
+									size="small"
+									label="Text"
+									variant="outlined"
+									value={defaultText}
+									placeholder="Text to show"
+									multiline
+									onChange={(event) => setDefaultText(event.target.value)}
+								/>
+							</Box>
+
+							<Box padding={2} style={{ backgroundColor: '#898989' }}>
+								<Typography variant="h6">Watermark</Typography>
+								<hr />
+								<Checkbox
+									checked={activeWatermark}
+									onChange={(event) => setActiveWatermark(event.target.checked)}
+								/>
+
+								<div>
+									<Typography variant="subtitle2">Watermark Color</Typography>
+									<div
+										className={colorPickerCss.swatch}
+										onClick={() => {
+											setShowColorPicker(!showColorPicker);
+										}}
+									>
+										<div className={colorPickerCss.color} />
+									</div>
+									{showColorPicker ? (
+										<div className={colorPickerCss.popover}>
+											<div
+												className={colorPickerCss.cover}
+												onClick={() => {
+													setShowColorPicker(!showColorPicker);
+												}}
+											/>
+											<SketchPicker
+												color={watermarkColor}
+												onChange={(color) => setWatermarkColor(color.hex)}
+											/>
+										</div>
+									) : null}
+								</div>
+								<TextField
+									size="small"
+									label="Watermark Size"
+									variant="outlined"
+									value={fontSize}
+									onChange={(event) => {
+										let number = Number(event.target.value);
+
+										if (!isNaN(number) && number < 101) {
+											setFontSize(number);
+										}
+									}}
+								/>
+
+								<TextField
+									label="watermark"
+									size="small"
+									variant="outlined"
+									value={text}
+									placeholder="Text to show"
+									multiline
+									onChange={(event) => setText(event.target.value)}
+								/>
+
+								<Typography variant="subtitle2">Opacity</Typography>
+								<Slider
+									value={opacity}
+									min={0.05}
+									step={0.001}
+									max={1}
+									onChange={(event, value) => {
+										setOpacity(value);
+									}}
+								/>
+
+								<Typography variant="subtitle2">Rotation</Typography>
+								<Slider
+									value={angle}
+									min={0}
+									step={45}
+									marks
+									max={360}
+									onChange={(event, value) => {
+										setAngle(value);
+									}}
+								/>
+
+								<Box marginTop={3}>
+									<Button
+										startIcon={<CloudDownload />}
+										fullWidth
+										variant="contained"
+										color="primary"
+										onClick={process}
+									>
+										Save PDF
+									</Button>
+								</Box>
+							</Box>
 						</Box>
+					) : (
+						<Box
+							component="div"
+							display="inline-block"
+							style={{ verticalAlign: 'top' }}
+							width={300}
+							marginLeft={2}
+							padding={1}
+							style={{ backgroundColor: '#AAAAAA' }}
+						>
+							<Box>
+								<TextField
+									label="Important pages"
+									size="small"
+									variant="outlined"
+									value={importantPages}
+									placeholder="1,2,3"
+									multiline
+									helperText="write pages separated by coma such: 1,2,3"
+									onChange={(event) => setImportantPages(event.target.value)}
+								/>
 
-						<Box padding={2} style={{ backgroundColor: '#898989' }}>
-							<Typography variant="h6">Watermark</Typography>
-							<hr />
-							<Checkbox
-								checked={activeWatermark}
-								onChange={(event) => setActiveWatermark(event.target.checked)}
-							/>
+								<TextField
+									label="Number of Pages to remove"
+									size="small"
+									variant="outlined"
+									value={numberOfRemovePage}
+									placeholder="Number of page"
+									multiline
+									helperText="Write how many page to remove"
+									onChange={(event) => {
+										let number = Number(event.target.value);
 
-							<div>
-								<Typography variant="caption">Watermark Color</Typography>
-								<div
-									className={colorPickerCss.swatch}
-									onClick={() => {
-										setShowColorPicker(!showColorPicker);
+										if (!isNaN(number)) {
+											setNumberOfRemovePage(number);
+										}
 									}}
-								>
-									<div className={colorPickerCss.color} />
-								</div>
-								{showColorPicker ? (
-									<div className={colorPickerCss.popover}>
-										<div
-											className={colorPickerCss.cover}
-											onClick={() => {
-												setShowColorPicker(!showColorPicker);
-											}}
-										/>
-										<SketchPicker
-											color={watermarkColor}
-											onChange={(color) => setWatermarkColor(color.hex)}
-										/>
-									</div>
-								) : null}
-							</div>
-							<TextField
-								size="small"
-								label="Watermark Size"
-								variant="outlined"
-								value={fontSize}
-								onChange={(event) => {
-									let number = Number(event.target.value);
-
-									if (!isNaN(number) && number < 101) {
-										setFontSize(number);
-									}
-								}}
-							/>
-
-							<TextField
-								label="watermark"
-								size="small"
-								variant="outlined"
-								value={text}
-								placeholder="Text to show"
-								multiline
-								onChange={(event) => setText(event.target.value)}
-							/>
-
-							<Typography variant="caption">Opacity</Typography>
-							<Slider
-								value={opacity}
-								min={0.05}
-								step={0.001}
-								max={1}
-								onChange={(event, value) => {
-									setOpacity(value);
-								}}
-							/>
-
-							<Typography variant="caption">Rotation</Typography>
-							<Slider
-								value={angle}
-								min={0}
-								step={45}
-								marks
-								max={360}
-								onChange={(event, value) => {
-									setAngle(value);
-								}}
-							/>
-
+								/>
+							</Box>
 							<Box marginTop={3}>
 								<Button
 									startIcon={<CloudDownload />}
 									fullWidth
 									variant="contained"
 									color="primary"
-									onClick={process}
+									onClick={removePages}
 								>
 									Save PDF
 								</Button>
 							</Box>
 						</Box>
-					</Box>
+					)}
 				</Box>
 			</Box>
 		</Box>
