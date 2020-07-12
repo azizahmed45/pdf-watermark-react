@@ -399,7 +399,7 @@ function PDFEditor() {
 						<Accordion expanded>
 							<AccordionSummary expandIcon={<ExpandMore />}>Geleverd aan</AccordionSummary>
 							<Box padding={2} style={{ backgroundColor: '#AAAAAA' }}>
-								<div>
+								<Box display="inline" marginY={2}>
 									<Typography variant="subtitle2">Text color </Typography>
 									<div
 										className={colorPickerCss.swatch}
@@ -423,30 +423,33 @@ function PDFEditor() {
 											/>
 										</div>
 									) : null}
-								</div>
-								<TextField
-									label="Text Size"
-									size="small"
-									variant="outlined"
-									value={defaultTextSize}
-									onChange={(event) => {
-										let number = Number(event.target.value);
+								</Box>
+								<Box marginY={2}>
+									<TextField
+										label="Text Size"
+										size="small"
+										variant="outlined"
+										value={defaultTextSize}
+										onChange={(event) => {
+											let number = Number(event.target.value);
 
-										if (!isNaN(number) && number < 101) {
-											setDefaultTextSize(number);
-										}
-									}}
-								/>
-
-								<TextField
-									size="small"
-									label="Text"
-									variant="outlined"
-									value={defaultText}
-									placeholder="Text to show"
-									multiline
-									onChange={(event) => setDefaultText(event.target.value)}
-								/>
+											if (!isNaN(number) && number < 101) {
+												setDefaultTextSize(number);
+											}
+										}}
+									/>
+								</Box>
+								<Box marginY={2}>
+									<TextField
+										size="small"
+										label="Text"
+										variant="outlined"
+										value={defaultText}
+										placeholder="Text to show"
+										multiline
+										onChange={(event) => setDefaultText(event.target.value)}
+									/>
+								</Box>
 							</Box>
 						</Accordion>
 
@@ -467,7 +470,7 @@ function PDFEditor() {
 							</AccordionSummary>
 
 							<Box padding={2} style={{ backgroundColor: '#898989' }}>
-								<div>
+								<Box>
 									<Typography variant="subtitle2">Watermark Color</Typography>
 									<div
 										className={colorPickerCss.swatch}
@@ -491,53 +494,59 @@ function PDFEditor() {
 											/>
 										</div>
 									) : null}
-								</div>
-								<TextField
-									size="small"
-									label="Watermark Size"
-									variant="outlined"
-									value={fontSize}
-									onChange={(event) => {
-										let number = Number(event.target.value);
+								</Box>
+								<Box marginY={2}>
+									<TextField
+										size="small"
+										label="Watermark Size"
+										variant="outlined"
+										value={fontSize}
+										onChange={(event) => {
+											let number = Number(event.target.value);
 
-										if (!isNaN(number) && number < 101) {
-											setFontSize(number);
-										}
-									}}
-								/>
+											if (!isNaN(number) && number < 101) {
+												setFontSize(number);
+											}
+										}}
+									/>
+								</Box>
+								<Box marginY={2}>
+									<TextField
+										label="watermark"
+										size="small"
+										variant="outlined"
+										value={text}
+										placeholder="Text to show"
+										multiline
+										onChange={(event) => setText(event.target.value)}
+									/>
+								</Box>
 
-								<TextField
-									label="watermark"
-									size="small"
-									variant="outlined"
-									value={text}
-									placeholder="Text to show"
-									multiline
-									onChange={(event) => setText(event.target.value)}
-								/>
-
-								<Typography variant="subtitle2">Opacity</Typography>
-								<Slider
-									value={opacity}
-									min={0.05}
-									step={0.001}
-									max={1}
-									onChange={(event, value) => {
-										setOpacity(value);
-									}}
-								/>
-
-								<Typography variant="subtitle2">Rotation</Typography>
-								<Slider
-									value={angle}
-									min={0}
-									step={45}
-									marks
-									max={360}
-									onChange={(event, value) => {
-										setAngle(value);
-									}}
-								/>
+								<Box marginY={2}>
+									<Typography variant="subtitle2">Opacity</Typography>
+									<Slider
+										value={opacity}
+										min={0.05}
+										step={0.001}
+										max={1}
+										onChange={(event, value) => {
+											setOpacity(value);
+										}}
+									/>
+								</Box>
+								<Box marginY={2}>
+									<Typography variant="subtitle2">Rotation</Typography>
+									<Slider
+										value={angle}
+										min={0}
+										step={45}
+										marks
+										max={360}
+										onChange={(event, value) => {
+											setAngle(value);
+										}}
+									/>
+								</Box>
 							</Box>
 						</Accordion>
 
@@ -557,34 +566,37 @@ function PDFEditor() {
 								/>
 							</AccordionSummary>
 
-							<Box>
-								<TextField
-									label="Important pages"
-									size="small"
-									variant="outlined"
-									value={importantPages}
-									placeholder="1,2,3"
-									multiline
-									helperText="write pages separated by coma such: 1,2,3"
-									onChange={(event) => setImportantPages(event.target.value)}
-								/>
+							<Box padding={2} style={{ backgroundColor: '#898989' }}>
+								<Box marginY={2}>
+									<TextField
+										label="Important pages"
+										size="small"
+										variant="outlined"
+										value={importantPages}
+										placeholder="1,2,3"
+										multiline
+										helperText="write pages separated by coma such: 1,2,3"
+										onChange={(event) => setImportantPages(event.target.value)}
+									/>
+								</Box>
+								<Box marginY={2}>
+									<TextField
+										label="Number of Pages to remove"
+										size="small"
+										variant="outlined"
+										value={numberOfRemovePage}
+										placeholder="Number of page"
+										multiline
+										helperText="Write how many page to remove"
+										onChange={(event) => {
+											let number = Number(event.target.value);
 
-								<TextField
-									label="Number of Pages to remove"
-									size="small"
-									variant="outlined"
-									value={numberOfRemovePage}
-									placeholder="Number of page"
-									multiline
-									helperText="Write how many page to remove"
-									onChange={(event) => {
-										let number = Number(event.target.value);
-
-										if (!isNaN(number)) {
-											setNumberOfRemovePage(number);
-										}
-									}}
-								/>
+											if (!isNaN(number)) {
+												setNumberOfRemovePage(number);
+											}
+										}}
+									/>
+								</Box>
 							</Box>
 						</Accordion>
 
