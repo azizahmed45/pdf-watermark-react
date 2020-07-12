@@ -49,7 +49,8 @@ function PDFEditor() {
 		x: pageSize.height / 2 - fontSize,
 		y: pageSize.width / 2 - getTextWidth(text, fontSize) / 2 - fontSize * Math.sin(angle * (Math.PI / 180))
 	});
-	const [ activeWatermark, setActiveWatermark ] = useState(true);
+	const [ activeWatermark, setActiveWatermark ] = useState(false);
+	const [ activePageRemove, setActivePageRemove ] = useState(false);
 
 	const [ defaultText, setDefaultText ] = useState('Geleverd aan');
 	const [ defaultTextColor, setDefaultTextColor ] = useState('#000000');
@@ -169,41 +170,42 @@ function PDFEditor() {
 			const doc = await PDFDocument.load(buffer);
 
 			////remove pages
-			let important = importantPages.split(' ').join('');
+			if (activePageRemove) {
+				let important = importantPages.split(' ').join('');
 
-			important = importantPages.split(',');
+				important = importantPages.split(',');
 
-			for (let n in important) {
-				if (isNaN(important[n]) || important[n] === '') {
-					important.splice(n, 1);
-				} else if (Number(important[n] > doc.getPageCount())) {
-					important.splice(n, 1);
-				} else {
-					important[n] = Number(important[n]);
+				for (let n in important) {
+					if (isNaN(important[n]) || important[n] === '') {
+						important.splice(n, 1);
+					} else if (Number(important[n] > doc.getPageCount())) {
+						important.splice(n, 1);
+					} else {
+						important[n] = Number(important[n]);
+					}
+				}
+
+				if (numberOfRemovePage + important.length >= doc.getPageCount()) {
+					console.log('invalid input');
+					return;
+				}
+
+				//generate random numbers
+				var randomRemoveList = [];
+				while (randomRemoveList.length < numberOfRemovePage) {
+					var r = Math.floor(Math.random() * doc.getPageCount()) + 1;
+					if (randomRemoveList.indexOf(r) === -1 && important.indexOf(r) === -1) randomRemoveList.push(r);
+				}
+
+				//sort
+				randomRemoveList.sort(function(a, b) {
+					return b - a;
+				});
+
+				for (let n of randomRemoveList) {
+					doc.removePage(n - 1);
 				}
 			}
-
-			if (numberOfRemovePage + important.length >= doc.getPageCount()) {
-				console.log('invalid input');
-				return;
-			}
-
-			//generate random numbers
-			var randomRemoveList = [];
-			while (randomRemoveList.length < numberOfRemovePage) {
-				var r = Math.floor(Math.random() * doc.getPageCount()) + 1;
-				if (randomRemoveList.indexOf(r) === -1 && important.indexOf(r) === -1) randomRemoveList.push(r);
-			}
-
-			//sort
-			randomRemoveList.sort(function(a, b) {
-				return b - a;
-			});
-
-			for (let n of randomRemoveList) {
-				doc.removePage(n - 1);
-			}
-
 			//remove pages end
 
 			const rotation = {
@@ -454,19 +456,17 @@ function PDFEditor() {
 									aria-label="Watermark"
 									onClick={(event) => event.stopPropagation()}
 									onFocus={(event) => event.stopPropagation()}
-									control={<Checkbox />}
+									control={
+										<Checkbox
+											checked={activeWatermark}
+											onChange={(event) => setActiveWatermark(event.target.checked)}
+										/>
+									}
 									label="Watermark"
 								/>
 							</AccordionSummary>
 
 							<Box padding={2} style={{ backgroundColor: '#898989' }}>
-								<Typography variant="h6">Watermark</Typography>
-								<hr />
-								<Checkbox
-									checked={activeWatermark}
-									onChange={(event) => setActiveWatermark(event.target.checked)}
-								/>
-
 								<div>
 									<Typography variant="subtitle2">Watermark Color</Typography>
 									<div
@@ -547,7 +547,12 @@ function PDFEditor() {
 									aria-label="Page Remove"
 									onClick={(event) => event.stopPropagation()}
 									onFocus={(event) => event.stopPropagation()}
-									control={<Checkbox />}
+									control={
+										<Checkbox
+											checked={activePageRemove}
+											onChange={(event) => setActivePageRemove(event.target.checked)}
+										/>
+									}
 									label="Page Remove"
 								/>
 							</AccordionSummary>
