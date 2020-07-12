@@ -22,12 +22,14 @@ import {
 	Slider,
 	Checkbox,
 	InputLabel,
+	Accordion,
+	AccordionSummary,
 	Select
 } from '@material-ui/core';
 import { Stage, Layer, Text } from 'react-konva';
 import { makeStyles } from '@material-ui/styles';
 import { PDFDocument, rgb, RotationTypes } from 'pdf-lib';
-import { PictureAsPdfRounded, AttachFile, CloudDownload } from '@material-ui/icons';
+import { PictureAsPdfRounded, AttachFile, CloudDownload, ExpandMore } from '@material-ui/icons';
 import { DropzoneDialog } from 'material-ui-dropzone';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { SketchPicker } from 'react-color';
@@ -57,8 +59,6 @@ function PDFEditor() {
 		x: pageSize.width / 2 - getTextWidth(defaultText, defaultTextSize) / 2,
 		y: 0
 	});
-
-	const [ option, setOption ] = useState('watermark');
 
 	const [ importantPages, setImportantPages ] = useState('');
 	const [ numberOfRemovePage, setNumberOfRemovePage ] = useState(0);
@@ -168,12 +168,48 @@ function PDFEditor() {
 
 			const doc = await PDFDocument.load(buffer);
 
+			////remove pages
+			let important = importantPages.split(' ').join('');
+
+			important = importantPages.split(',');
+
+			for (let n in important) {
+				if (isNaN(important[n]) || important[n] === '') {
+					important.splice(n, 1);
+				} else if (Number(important[n] > doc.getPageCount())) {
+					important.splice(n, 1);
+				} else {
+					important[n] = Number(important[n]);
+				}
+			}
+
+			if (numberOfRemovePage + important.length >= doc.getPageCount()) {
+				console.log('invalid input');
+				return;
+			}
+
+			//generate random numbers
+			var randomRemoveList = [];
+			while (randomRemoveList.length < numberOfRemovePage) {
+				var r = Math.floor(Math.random() * doc.getPageCount()) + 1;
+				if (randomRemoveList.indexOf(r) === -1 && important.indexOf(r) === -1) randomRemoveList.push(r);
+			}
+
+			//sort
+			randomRemoveList.sort(function(a, b) {
+				return b - a;
+			});
+
+			for (let n of randomRemoveList) {
+				doc.removePage(n - 1);
+			}
+
+			//remove pages end
+
 			const rotation = {
 				type: RotationTypes.Degrees,
 				angle: angle
 			};
-
-			console.log(rotation);
 
 			for (let page of doc.getPages()) {
 				const { x, y } = generatePosition();
@@ -246,48 +282,6 @@ function PDFEditor() {
 		return rgb(r, g, b);
 	}
 
-	async function removePages() {
-		let important = importantPages.split(' ').join('');
-
-		important = importantPages.split(',');
-
-		for (let n in important) {
-			if (isNaN(important[n]) || important[n] === '') {
-				important.splice(n, 1);
-			} else {
-				important[n] = Number(important[n]);
-			}
-		}
-
-		if (allFiles.length > 0) {
-			const buffer = await allFiles[selected].arrayBuffer();
-
-			const doc = await PDFDocument.load(buffer);
-
-			//generate random numbers
-			var randomRemoveList = [];
-			while (randomRemoveList.length < numberOfRemovePage) {
-				var r = Math.floor(Math.random() * doc.getPageCount()) + 1;
-				if (randomRemoveList.indexOf(r) === -1 && important.indexOf(r) === -1) randomRemoveList.push(r);
-			}
-
-			//sort
-			randomRemoveList.sort(function(a, b) {
-				return b - a;
-			});
-
-			for (let n of randomRemoveList) {
-				doc.removePage(n - 1);
-			}
-
-			console.log(randomRemoveList);
-
-			const dl = await doc.save();
-
-			require('downloadjs')(dl, allFiles[selected].name, 'application/pdf');
-		}
-	}
-
 	function getFiles() {
 		return allFiles.map((file, index) => {
 			return (
@@ -311,19 +305,6 @@ function PDFEditor() {
 						<Typography variant="h6" color="inherit">
 							AlbersenIC
 						</Typography>
-						<Select
-							native
-							value={option}
-							onChange={(event) => {
-								setOption(event.target.value);
-							}}
-							inputProps={{
-								name: 'option'
-							}}
-						>
-							<option value="watermark">Watermark</option>
-							<option value="page-remover">Page Remover</option>
-						</Select>
 					</Toolbar>
 				</AppBar>
 
@@ -406,18 +387,16 @@ function PDFEditor() {
 						</Box>
 					</Box>
 
-					{option === 'watermark' ? (
-						<Box
-							component="div"
-							display="inline-block"
-							style={{ verticalAlign: 'top' }}
-							width={300}
-							marginLeft={2}
-						>
+					<Box
+						component="div"
+						display="inline-block"
+						style={{ verticalAlign: 'top' }}
+						width={300}
+						marginLeft={2}
+					>
+						<Accordion expanded>
+							<AccordionSummary expandIcon={<ExpandMore />}>Geleverd aan</AccordionSummary>
 							<Box padding={2} style={{ backgroundColor: '#AAAAAA' }}>
-								<Typography variant="h6">Geleverd aan</Typography>
-								<hr />
-
 								<div>
 									<Typography variant="subtitle2">Text color </Typography>
 									<div
@@ -467,6 +446,18 @@ function PDFEditor() {
 									onChange={(event) => setDefaultText(event.target.value)}
 								/>
 							</Box>
+						</Accordion>
+
+						<Accordion>
+							<AccordionSummary expandIcon={<ExpandMore />}>
+								<FormControlLabel
+									aria-label="Watermark"
+									onClick={(event) => event.stopPropagation()}
+									onFocus={(event) => event.stopPropagation()}
+									control={<Checkbox />}
+									label="Watermark"
+								/>
+							</AccordionSummary>
 
 							<Box padding={2} style={{ backgroundColor: '#898989' }}>
 								<Typography variant="h6">Watermark</Typography>
@@ -547,30 +538,20 @@ function PDFEditor() {
 										setAngle(value);
 									}}
 								/>
-
-								<Box marginTop={3}>
-									<Button
-										startIcon={<CloudDownload />}
-										fullWidth
-										variant="contained"
-										color="primary"
-										onClick={process}
-									>
-										Save PDF
-									</Button>
-								</Box>
 							</Box>
-						</Box>
-					) : (
-						<Box
-							component="div"
-							display="inline-block"
-							style={{ verticalAlign: 'top' }}
-							width={300}
-							marginLeft={2}
-							padding={1}
-							style={{ backgroundColor: '#AAAAAA' }}
-						>
+						</Accordion>
+
+						<Accordion>
+							<AccordionSummary expandIcon={<ExpandMore />}>
+								<FormControlLabel
+									aria-label="Page Remove"
+									onClick={(event) => event.stopPropagation()}
+									onFocus={(event) => event.stopPropagation()}
+									control={<Checkbox />}
+									label="Page Remove"
+								/>
+							</AccordionSummary>
+
 							<Box>
 								<TextField
 									label="Important pages"
@@ -600,19 +581,20 @@ function PDFEditor() {
 									}}
 								/>
 							</Box>
-							<Box marginTop={3}>
-								<Button
-									startIcon={<CloudDownload />}
-									fullWidth
-									variant="contained"
-									color="primary"
-									onClick={removePages}
-								>
-									Save PDF
-								</Button>
-							</Box>
+						</Accordion>
+
+						<Box marginTop={3} marginBottom={3}>
+							<Button
+								startIcon={<CloudDownload />}
+								fullWidth
+								variant="contained"
+								color="primary"
+								onClick={process}
+							>
+								Save PDF
+							</Button>
 						</Box>
-					)}
+					</Box>
 				</Box>
 			</Box>
 		</Box>
