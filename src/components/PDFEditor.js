@@ -28,7 +28,7 @@ import {
 } from '@material-ui/core';
 import { Stage, Layer, Text } from 'react-konva';
 import { makeStyles } from '@material-ui/styles';
-import { PDFDocument, rgb, RotationTypes } from 'pdf-lib';
+import { PDFDocument, rgb, RotationTypes, degrees } from 'pdf-lib';
 import { PictureAsPdfRounded, AttachFile, CloudDownload, ExpandMore } from '@material-ui/icons';
 import { DropzoneDialog } from 'material-ui-dropzone';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -40,7 +40,7 @@ function PDFEditor() {
 	const [ selected, setSelected ] = useState();
 	const [ watermarkColor, setWatermarkColor ] = useState('#FF0000');
 	const [ pageSize, setPageSize ] = useState({ width: 600, height: 600 });
-	const [ ratio, setRation ] = useState(1);
+	// const [ ratio, setRation ] = useState(1);
 	const [ showColorPicker, setShowColorPicker ] = useState(false);
 	const [ fontSize, setFontSize ] = useState(40);
 	const [ opacity, setOpacity ] = useState(0.3);
@@ -148,12 +148,21 @@ function PDFEditor() {
 
 			const size = page.getSize();
 
-			var ratio = 600 / size.width;
+			if (page.getRotation().angle % 180 === 0) {
+				var ratio = 600 / size.width;
 
-			var height = size.height * ratio;
+				var height = size.height * ratio;
 
-			setRation(ratio);
-			setPageSize({ width: 600, height: height });
+				// setRation(ratio);
+				setPageSize({ width: 600, height: height });
+			} else {
+				var ratio = 600 / size.height;
+
+				var height = size.width * ratio;
+
+				// setRation(ratio);
+				setPageSize({ width: 600, height: height });
+			}
 		}
 	}
 
@@ -208,36 +217,60 @@ function PDFEditor() {
 			}
 			//remove pages end
 
-			const rotation = {
-				type: RotationTypes.Degrees,
-				angle: angle
-			};
-
 			for (let page of doc.getPages()) {
-				const { x, y } = generatePosition();
+				console.log(page.getRotation().angle);
+				let lRatio;
+				if (page.getRotation().angle === 0) {
+					lRatio = 600 / page.getSize().width;
+					console.log(`width ${page.getSize().width}`);
+				} else {
+					lRatio = 600 / page.getSize().height;
+					console.log(`height ${page.getSize().width}`);
+				}
 
-				const { defaultTextX, defaultTextY } = generateDefaultTextPosition();
+				// lRatio = 600 / page.getSize().width;
+
+				const watermarkRotation = {
+					type: RotationTypes.Degrees,
+					angle: angle + page.getRotation().angle
+				};
+
+				const defaultTextRotation = {
+					type: RotationTypes.Degrees,
+					angle: page.getRotation().angle
+				};
+
+				const { x, y } = generatePosition(page);
+
+				const { defaultTextX, defaultTextY } = generateDefaultTextPosition(page);
+
+				console.log(`ratio ${lRatio}`);
+
+				console.log(`x ${defaultTextX / lRatio}`);
+				console.log(`y ${defaultTextY / lRatio}`);
 
 				page.drawText(defaultText, {
-					x: defaultTextX / ratio,
-					y: defaultTextY / ratio,
-					lineHeight: defaultTextSize / ratio,
+					x: defaultTextX / lRatio,
+					y: defaultTextY / lRatio,
+					lineHeight: defaultTextSize / lRatio,
 					color: generateColorForPdf(defaultTextColor),
-					size: defaultTextSize / ratio
+					size: defaultTextSize / lRatio,
+					rotate: defaultTextRotation
 				});
 
 				if (activeWatermark) {
 					page.drawText(text, {
-						x: x / ratio,
-						y: y / ratio,
+						x: x / lRatio,
+						y: y / lRatio,
 						opacity: opacity,
 						color: generateColorForPdf(watermarkColor),
-						lineHeight: fontSize / ratio,
-						rotate: rotation,
-						size: fontSize / ratio
+						lineHeight: fontSize / lRatio,
+						rotate: watermarkRotation,
+						size: fontSize / lRatio
 					});
 				}
 			}
+			// return;
 
 			const dl = await doc.save();
 
@@ -254,12 +287,19 @@ function PDFEditor() {
 		return context.measureText(text).width;
 	}
 
-	function generatePosition() {
+	function generatePosition(page) {
 		//for font size and angle
 		let radianAngle = angle * (Math.PI / 180);
+		let x;
+		let y;
 
-		let x = watermarkPosition.x + fontSize * Math.cos(radianAngle);
-		let y = pageSize.height - watermarkPosition.y + fontSize * Math.sin(radianAngle);
+		if (page.getRotation().angle === 0) {
+			x = watermarkPosition.x + fontSize * Math.cos(radianAngle);
+			y = pageSize.height - watermarkPosition.y + fontSize * Math.sin(radianAngle);
+		} else {
+			x = watermarkPosition.y + fontSize * Math.cos(radianAngle);
+			y = watermarkPosition.x + fontSize * Math.sin(radianAngle);
+		}
 
 		return {
 			x: x,
@@ -267,9 +307,18 @@ function PDFEditor() {
 		};
 	}
 
-	function generateDefaultTextPosition() {
-		let x = defaultTextPosition.x;
-		let y = pageSize.height - defaultTextPosition.y - defaultTextSize;
+	function generateDefaultTextPosition(page) {
+		let x;
+		let y;
+
+		if (page.getRotation().angle === 0) {
+			x = defaultTextPosition.x;
+			y = pageSize.height - defaultTextPosition.y - defaultTextSize;
+		} else {
+			x = defaultTextPosition.y + defaultTextSize;
+			y = defaultTextPosition.x;
+		}
+
 		return {
 			defaultTextX: x,
 			defaultTextY: y
