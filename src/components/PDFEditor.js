@@ -218,9 +218,8 @@ function PDFEditor() {
 			//remove pages end
 
 			for (let page of doc.getPages()) {
-				console.log(page.getRotation().angle);
 				let lRatio;
-				if (page.getRotation().angle === 0) {
+				if (page.getRotation().angle % 180 === 0) {
 					lRatio = 600 / page.getSize().width;
 					console.log(`width ${page.getSize().width}`);
 				} else {
@@ -293,7 +292,7 @@ function PDFEditor() {
 		let x;
 		let y;
 
-		if (page.getRotation().angle === 0) {
+		if (page.getRotation().angle % 180 === 0) {
 			x = watermarkPosition.x + fontSize * Math.cos(radianAngle);
 			y = pageSize.height - watermarkPosition.y + fontSize * Math.sin(radianAngle);
 		} else {
@@ -311,7 +310,7 @@ function PDFEditor() {
 		let x;
 		let y;
 
-		if (page.getRotation().angle === 0) {
+		if (page.getRotation().angle % 180 === 0) {
 			x = defaultTextPosition.x;
 			y = pageSize.height - defaultTextPosition.y - defaultTextSize;
 		} else {
