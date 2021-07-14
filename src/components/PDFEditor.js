@@ -661,7 +661,7 @@ function PDFEditor() {
 							</Box>
 						</Accordion>
 
-						<Box padding={2} style={{ backgroundColor: '#AAAAAA' }}>
+						<Box padding={2} style={{ backgroundColor: '#AAAAAA' }} visibility="hidden">
 
 							<Box marginY={2}>
 								<TextField
