@@ -13,7 +13,7 @@
     "downloadjs": "^1.4.7",
     "konva": "^7.0.0",
     "material-ui-dropzone": "^3.3.0",
-    "pdf-lib": "^1.9.0",
+    "pdf-lib": "github:azizahmed45/pdf-lib#develop/DocEncrypt",
     "react": "^16.13.1",
     "react-bootstrap": "^1.0.1",
     "react-color": "^2.18.1",

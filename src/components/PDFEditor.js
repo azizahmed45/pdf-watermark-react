@@ -35,43 +35,45 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import { SketchPicker } from 'react-color';
 
 function PDFEditor() {
-	const [ allFiles, setFiles ] = useState([]);
-	const [ text, setText ] = useState('Watermark');
-	const [ selected, setSelected ] = useState();
-	const [ watermarkColor, setWatermarkColor ] = useState('#FF0000');
-	const [ pageSize, setPageSize ] = useState({ width: 600, height: 600 });
+	const [allFiles, setFiles] = useState([]);
+	const [text, setText] = useState('Watermark');
+	const [selected, setSelected] = useState();
+	const [watermarkColor, setWatermarkColor] = useState('#FF0000');
+	const [pageSize, setPageSize] = useState({ width: 600, height: 600 });
 	// const [ ratio, setRation ] = useState(1);
-	const [ showColorPicker, setShowColorPicker ] = useState(false);
-	const [ fontSize, setFontSize ] = useState(40);
-	const [ opacity, setOpacity ] = useState(0.3);
-	const [ angle, setAngle ] = useState(45);
-	const [ watermarkPosition, setWatermarkPosition ] = useState({
+	const [showColorPicker, setShowColorPicker] = useState(false);
+	const [fontSize, setFontSize] = useState(40);
+	const [opacity, setOpacity] = useState(0.3);
+	const [angle, setAngle] = useState(45);
+	const [watermarkPosition, setWatermarkPosition] = useState({
 		x: pageSize.height / 2 - fontSize,
 		y: pageSize.width / 2 - getTextWidth(text, fontSize) / 2 - fontSize * Math.sin(angle * (Math.PI / 180))
 	});
-	const [ activeWatermark, setActiveWatermark ] = useState(false);
-	const [ activePageRemove, setActivePageRemove ] = useState(false);
+	const [activeWatermark, setActiveWatermark] = useState(false);
+	const [activePageRemove, setActivePageRemove] = useState(false);
 
-	const [ defaultText, setDefaultText ] = useState('Geleverd aan');
-	const [ defaultTextColor, setDefaultTextColor ] = useState('#000000');
-	const [ defaultTextSize, setDefaultTextSize ] = useState(11);
-	const [ showDefaultTextColorPicker, setShowDefaultTextColorPicker ] = useState(false);
-	const [ defaultTextPosition, setDefaultTextPosition ] = useState({
+	const [defaultText, setDefaultText] = useState('Geleverd aan');
+	const [defaultTextColor, setDefaultTextColor] = useState('#000000');
+	const [defaultTextSize, setDefaultTextSize] = useState(11);
+	const [showDefaultTextColorPicker, setShowDefaultTextColorPicker] = useState(false);
+	const [defaultTextPosition, setDefaultTextPosition] = useState({
 		x: pageSize.width / 2 - getTextWidth(defaultText, defaultTextSize) / 2,
 		y: 0
 	});
 
-	const [ importantPages, setImportantPages ] = useState('');
-	const [ numberOfRemovePage, setNumberOfRemovePage ] = useState(0);
+	const [importantPages, setImportantPages] = useState('');
+	const [numberOfRemovePage, setNumberOfRemovePage] = useState(0);
+
+	const [password, setPassword] = useState('');
 
 	useEffect(
 		() => {
 			selectItem();
 		},
-		[ selected ]
+		[selected]
 	);
 
-	const [ dropzone, setDropzone ] = useState({
+	const [dropzone, setDropzone] = useState({
 		open: false,
 		files: []
 	});
@@ -207,7 +209,7 @@ function PDFEditor() {
 				}
 
 				//sort
-				randomRemoveList.sort(function(a, b) {
+				randomRemoveList.sort(function (a, b) {
 					return b - a;
 				});
 
@@ -270,6 +272,17 @@ function PDFEditor() {
 				}
 			}
 			// return;
+
+
+			//encrypt
+			if(password.length !== 0){
+				doc.encrypt({
+					ownerPassword: password,
+					userPassword: password,
+					permissions: { modifying: true },
+				});
+			}
+
 
 			const dl = await doc.save();
 
@@ -378,7 +391,7 @@ function PDFEditor() {
 						<DropzoneDialog
 							open={dropzone.open}
 							onSave={submitFile}
-							acceptedFiles={[ 'application/pdf' ]}
+							acceptedFiles={['application/pdf']}
 							filesLimit={500}
 							showPreviews={true}
 							maxFileSize={5000000000}
@@ -647,6 +660,27 @@ function PDFEditor() {
 								</Box>
 							</Box>
 						</Accordion>
+
+						<Box padding={2} style={{ backgroundColor: '#AAAAAA' }}>
+
+							<Box marginY={2}>
+								<TextField
+									label="Password"
+									size="small"
+									variant="outlined"
+									value={password}
+									onChange={(event) => {
+										let pw = String(event.target.value);
+
+										setPassword(pw);
+
+									}}
+								/>
+							</Box>
+
+						</Box>
+
+
 
 						<Box marginTop={3} marginBottom={3}>
 							<Button
