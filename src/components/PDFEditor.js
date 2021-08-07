@@ -33,7 +33,6 @@ import { PictureAsPdfRounded, AttachFile, CloudDownload, ExpandMore } from '@mat
 import { DropzoneDialog } from 'material-ui-dropzone';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { SketchPicker } from 'react-color';
-
 function PDFEditor() {
 	const [allFiles, setFiles] = useState([]);
 	const [text, setText] = useState('Watermark');
@@ -144,7 +143,7 @@ function PDFEditor() {
 		if (allFiles.length > 0) {
 			const buffer = await allFiles[selected].arrayBuffer();
 
-			const doc = await PDFDocument.load(buffer);
+			const doc = await PDFDocument.load(buffer, { ignoreEncryption: true });
 
 			const page = doc.getPage(0);
 
@@ -178,7 +177,7 @@ function PDFEditor() {
 		if (allFiles.length > 0) {
 			const buffer = await allFiles[selected].arrayBuffer();
 
-			const doc = await PDFDocument.load(buffer);
+			const doc = await PDFDocument.load(buffer, { ignoreEncryption: true });
 
 			////remove pages
 			if (activePageRemove) {
@@ -275,16 +274,23 @@ function PDFEditor() {
 
 
 			//encrypt
-			if(password.length !== 0){
+			if (password.length > 0) {
 				doc.encrypt({
 					ownerPassword: password,
-					userPassword: password,
-					permissions: { modifying: true },
+					permissions: {
+						modifying: false,
+						contentAccessibility: false,
+						annotating: false,
+						documentAssembly: false,
+						printing: false,
+						copying: false,
+						fillingForms: false
+					},
 				});
 			}
 
 
-			const dl = await doc.save();
+			const dl = await doc.save({ useObjectStreams: false });
 
 			require('downloadjs')(dl, allFiles[selected].name, 'application/pdf');
 		}
@@ -661,7 +667,7 @@ function PDFEditor() {
 							</Box>
 						</Accordion>
 
-						<Box padding={2} style={{ backgroundColor: '#AAAAAA' }} visibility="hidden">
+						<Box padding={2} style={{ backgroundColor: '#AAAAAA' }}>
 
 							<Box marginY={2}>
 								<TextField
